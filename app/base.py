@@ -21,7 +21,7 @@ class ETHBase:
         self,
         node_host: str = '',
         node_port: typing.Union[str, int] = 8545,
-        node_connection_type: str = 'rpc',
+        node_connection_type: str = 'http',
         node_consensus: str = 'PoA'
     ):
 
@@ -111,7 +111,7 @@ class ETHBase:
         self,
         node_host: str,
         node_port: typing.Union[str, int] = 8545,
-        node_connection_type: str = 'rpc',
+        node_connection_type: str = 'http',
         node_consensus: str = 'PoA',
     ):
 
