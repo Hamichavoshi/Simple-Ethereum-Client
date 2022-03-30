@@ -1,3 +1,5 @@
+from web3.exceptions import TransactionNotFound
+
 class UserError(Exception):
     pass
 

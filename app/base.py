@@ -1,14 +1,5 @@
 import typing, os, solcx
-from pathlib import Path
-from eth_account.account import Account
-from hexbytes.main import HexBytes
 from web3 import Web3
-from web3.contract import Contract
-from web3.datastructures import AttributeDict
-from web3.middleware import geth_poa_middleware
-from web3.exceptions import TransactionNotFound
-from eth_account.signers.local import LocalAccount
-from web3.types import BlockData, BlockIdentifier, TxData, TxReceipt
 from .exception import *
 from .utils import *
 
@@ -319,15 +310,17 @@ class ETHBase:
             **contract_kwargs
         )
 
+        if not isinstance(gas_price, int):
+            gas_price = self.w3.eth.gas_price
+
         transaction = constructor.buildTransaction({
             "from": account.address,
             "nonce": current_nonce,
-            "value": value
+            "value": value,
+            "gasPrice": gas_price
         })
 
         total_gas = transaction['gas']
-        if not isinstance(gas_price, int):
-            gas_price = self.w3.eth.gas_price
 
         account_balance = self.w3.eth.get_balance(account.address)
 
@@ -384,16 +377,28 @@ class ETHBase:
             **contract_kwargs
         )
 
-        transaction = constructor.buildTransaction({
-            "from": address,
-            "value": value
-        })
-
-        total_gas = transaction['gas']
         if not isinstance(gas_price, int):
             gas_price = self.w3.eth.gas_price
 
+        transaction = constructor.buildTransaction({
+            "from": address,
+            "value": value,
+            "gasPrice": gas_price
+        })
+
+        total_gas = transaction['gas']
+
         return {'cost': total_gas*gas_price, 'value': value, 'total': total_gas*gas_price+value}
+
+    @check_connection
+    def get_contract_address(
+        self,
+        transaction_hash: str
+    ) -> typing.Optional[str]:
+
+        receipt = self.get_transaction_receipt(transaction_hash)
+
+        return receipt.get('contractAddress', None)
 
     @check_connection
     def get_contract(
@@ -447,15 +452,17 @@ class ETHBase:
         contract_args, contract_kwargs = self.parse_args(contract_args, contract_kwargs)
         constructor = method(*contract_args, **contract_kwargs)
 
+        if not isinstance(gas_price, int):
+            gas_price = self.w3.eth.gas_price
+
         transaction = constructor.buildTransaction({
             "from": account.address,
             "nonce": current_nonce,
-            "value": value
+            "value": value,
+            "gasPrice": gas_price
         })
 
         total_gas = transaction['gas']
-        if not isinstance(gas_price, int):
-            gas_price = self.w3.eth.gas_price
 
         account_balance = self.w3.eth.get_balance(account.address)
 
@@ -510,14 +517,16 @@ class ETHBase:
         contract_args, contract_kwargs = self.parse_args(contract_args, contract_kwargs)
         constructor = method(*contract_args, **contract_kwargs)
 
+        if not isinstance(gas_price, int):
+            gas_price = self.w3.eth.gas_price
+        
         transaction = constructor.buildTransaction({
             "from": address,
-            "value": value
+            "value": value,
+            "gasPrice": gas_price
         })
 
         total_gas = transaction['gas']
-        if not isinstance(gas_price, int):
-            gas_price = self.w3.eth.gas_price
 
         return {'cost': total_gas*gas_price, 'value': value, 'total': total_gas*gas_price+value}
 
