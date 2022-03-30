@@ -276,7 +276,7 @@ class ETHBase:
         return solcx.compile_files(source_files=source_files, output_values=['bin', 'abi'])
 
     @check_connection
-    def create_contract(
+    def deploy_contract(
         self,
         contract_bytecode: str,
         contract_abi: typing.List[typing.Dict[str, typing.Any]],
@@ -343,7 +343,7 @@ class ETHBase:
         return payload
 
     @check_connection
-    def estimate_create_contract_price(
+    def estimate_deploy_contract_price(
         self,
         contract_bytecode: str,
         contract_abi: typing.List[typing.Dict[str, typing.Any]],
