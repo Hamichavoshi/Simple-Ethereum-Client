@@ -12,6 +12,6 @@ def check_connection(f):
     @wraps(f)
     def decorator(self, *args, **kwargs):
         if not self.isConnected:
-            raise ConnectionError("Instance is not connected to ethereum node and mongo server")
+            raise ConnectionError("Instance is not connected to ethereum node")
         return f(self, *args, **kwargs)
     return decorator
