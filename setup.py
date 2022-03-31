@@ -25,7 +25,7 @@ setup(
         "Topic :: Utilities"
     ],
     keywords=["ethereum", "web3", "solidity"],
-    requires=[
+    install_requires=[
         "py-solc-x>=1.1.0",
         "web3>=5.20.0"
     ],
