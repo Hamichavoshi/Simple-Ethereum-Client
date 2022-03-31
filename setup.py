@@ -7,7 +7,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name="Simple Ethereum Client",
+    name="eth_client",
     version=__version__,
     description="simple python client to access ethereum network",
     long_description=read('README.md'),
