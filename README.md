@@ -61,7 +61,7 @@ node_port = 8546
 node_connection_type = 'http'
 node_consensus = 'PoW'
 
-client.connectt(
+client.connect(
     node_host=node_host,
     node_port=node_port,
     node_connection_type=node_connection_type,
@@ -71,7 +71,10 @@ client.connectt(
 
 ### Create new ethereum account
 
-The returned object is dictionary with keys `"account"` with value is the instance of `"LocalAccount"` and `"encrypted_key"` with value is the dictionary that contains address and private key of the account encrypted with password input from the parameter.
+The returned object is dictionary with 2 keys,
+
+* `"account"`, contains the instance of `"LocalAccount"`
+* `"encrypted_key"`, contains the dictionary that contains address and private key of the account encrypted with password input from the parameter
 
 ```python
 import json

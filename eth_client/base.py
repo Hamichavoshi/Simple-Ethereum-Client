@@ -41,9 +41,9 @@ class ETHClient:
             return [ETHClient.parse_json(i) for i in data]
         elif isinstance(data, (dict, AttributeDict)):
             return {k: ETHClient.parse_json(v) for k,v in data.items()}
-        elif isinstance(data,HexBytes):
+        elif isinstance(data, HexBytes):
             return data.hex()
-        elif isinstance(data,bytes):
+        elif isinstance(data, bytes):
             return '0x'+data.hex()
         elif not isinstance(data, (str, int, float)):
             return str(data)
@@ -194,16 +194,22 @@ class ETHClient:
         gas_price: int = None,
         account: LocalAccount = None,
         password: str = None,
-        encrypted_key: typing.Dict[str, typing.Any] = None
+        encrypted_key: typing.Dict[str, typing.Any] = None,
+        private_key: str = None
     ) -> TxData:
 
-        if not (isinstance(account, LocalAccount) or (isinstance(password, str) and isinstance(encrypted_key, dict))):
-            raise TypeError('At least "account" parameter or "password" and "encrypted_key" parameter must be provided')
+        if not (isinstance(account, (LocalAccount, Account)) or \
+            (isinstance(password, str) and isinstance(encrypted_key, dict)) or \
+            isinstance(private_key, str)):
+            raise TypeError('At least "account" parameter or "private_key" or "password" and "encrypted_key" parameter must be provided')
 
         if not isinstance(account,(LocalAccount, Account)):
-            account = self.get_account(password, encrypted_key)
+            if isinstance(password, str) and isinstance(encrypted_key, dict):
+                account = self.get_account(password, encrypted_key)
+            else:
+                account = self.get_account_from_key(private_key)
 
-        if isinstance(to, LocalAccount):
+        if isinstance(to, (LocalAccount, Account)):
             to = to.address
         elif isinstance(to, str) and '0x' == to[:2]:
             to = self.parse_address(to)
@@ -291,17 +297,23 @@ class ETHClient:
         account: LocalAccount = None,
         password: str = None,
         encrypted_key: typing.Dict[str, typing.Any] = None,
+        private_key: str = None,
         **contract_kwargs
     ) -> typing.Dict[str, typing.Any]:
 
         if value < 0:
             raise ValueError('Value parameter must be non negative')
 
-        if not (isinstance(account, LocalAccount) or (isinstance(password, str) and isinstance(encrypted_key, dict))):
-            raise TypeError('At least "account" parameter or "password" and "encrypted_key" parameter must be provided')
+        if not (isinstance(account, (LocalAccount, Account)) or \
+            (isinstance(password, str) and isinstance(encrypted_key, dict)) or \
+            isinstance(private_key, str)):
+            raise TypeError('At least "account" parameter or "private_key" or "password" and "encrypted_key" parameter must be provided')
 
         if not isinstance(account,(LocalAccount, Account)):
-            account = self.get_account(password, encrypted_key)
+            if isinstance(password, str) and isinstance(encrypted_key, dict):
+                account = self.get_account(password, encrypted_key)
+            else:
+                account = self.get_account_from_key(private_key)
 
         current_nonce = nonce or self.w3.eth.get_transaction_count(account.address)
 
@@ -358,19 +370,23 @@ class ETHClient:
         account: LocalAccount = None,
         password: str = None,
         encrypted_key: typing.Dict[str, typing.Any] = None,
+        private_key: str = None,
         **contract_kwargs
     ) -> typing.Dict[str, int]:
 
         if value < 0:
             raise ValueError('Value parameter must be non negative')
         
-        if not (isinstance(account, LocalAccount) or isinstance(address, str) or (isinstance(password, str) and isinstance(encrypted_key, dict))):
-            raise TypeError('At least "address" parameter or "account" parameter or "password" and "encrypted_key" parameter must be provided')
+        if not (isinstance(account, (LocalAccount, Account)) or \
+            (isinstance(password, str) and isinstance(encrypted_key, dict)) or \
+            isinstance(private_key, str)):
+            raise TypeError('At least "account" parameter or "private_key" or "password" and "encrypted_key" parameter must be provided')
 
-        if not isinstance(address, str):
-            if not isinstance(account,(LocalAccount, Account)):
+        if not isinstance(account,(LocalAccount, Account)):
+            if isinstance(password, str) and isinstance(encrypted_key, dict):
                 account = self.get_account(password, encrypted_key)
-            address = account.address
+            else:
+                account = self.get_account_from_key(private_key)
 
         contract_args, contract_kwargs = self.parse_args(contract_args, contract_kwargs)
         constructor = self.w3.eth.contract(
@@ -385,7 +401,7 @@ class ETHClient:
             gas_price = self.w3.eth.gas_price
 
         transaction = constructor.buildTransaction({
-            "from": address,
+            "from": account.address,
             "value": value,
             "gasPrice": gas_price
         })
@@ -430,6 +446,7 @@ class ETHClient:
         account: LocalAccount = None,
         password: str = None,
         encrypted_key: typing.Dict[str, typing.Any] = None,
+        private_key: str = None,
         **contract_kwargs
     ) -> TxData:
 
@@ -439,11 +456,16 @@ class ETHClient:
         if not (isinstance(contract, Contract) or (isinstance(contract_address, str) and isinstance(contract_abi, list))):
             raise TypeError('At least "contract" parameter or "contract_address" and "contract_abi" parameter must be provided')
 
-        if not (isinstance(account, LocalAccount) or (isinstance(password, str) and isinstance(encrypted_key, dict))):
-            raise TypeError('At least "account" parameter or "password" and "encrypted_key" parameter must be provided')
+        if not (isinstance(account, (LocalAccount, Account)) or \
+            (isinstance(password, str) and isinstance(encrypted_key, dict)) or \
+            isinstance(private_key, str)):
+            raise TypeError('At least "account" parameter or "private_key" or "password" and "encrypted_key" parameter must be provided')
 
         if not isinstance(account,(LocalAccount, Account)):
-            account = self.get_account(password, encrypted_key)
+            if isinstance(password, str) and isinstance(encrypted_key, dict):
+                account = self.get_account(password, encrypted_key)
+            else:
+                account = self.get_account_from_key(private_key)
 
         current_nonce = nonce or self.w3.eth.get_transaction_count(account.address)
 
@@ -495,6 +517,7 @@ class ETHClient:
         account: LocalAccount = None,
         password: str = None,
         encrypted_key: typing.Dict[str, typing.Any] = None,
+        private_key: str = None,
         **contract_kwargs
     ) -> typing.Dict[str, int]:
 
@@ -504,11 +527,16 @@ class ETHClient:
         if not (isinstance(contract, Contract) or (isinstance(contract_address, str) and isinstance(contract_abi, list))):
             raise TypeError('At least "contract" parameter or "contract_address" and "contract_abi" parameter must be provided')
         
-        if not (isinstance(account, LocalAccount) or isinstance(address, str) or (isinstance(password, str) and isinstance(encrypted_key, dict))):
-            raise TypeError('At least "address" parameter or "account" parameter or "password" and "encrypted_key" parameter must be provided')
+        if not (isinstance(account, (LocalAccount, Account)) or \
+            (isinstance(password, str) and isinstance(encrypted_key, dict)) or \
+            isinstance(private_key, str)):
+            raise TypeError('At least "account" parameter or "private_key" or "password" and "encrypted_key" parameter must be provided')
 
-        if not isinstance(contract, Contract):
-            contract = self.get_contract(contract_address, contract_abi)
+        if not isinstance(account,(LocalAccount, Account)):
+            if isinstance(password, str) and isinstance(encrypted_key, dict):
+                account = self.get_account(password, encrypted_key)
+            else:
+                account = self.get_account_from_key(private_key)
 
         if not isinstance(address, str):
             if not isinstance(account,(LocalAccount, Account)):
@@ -590,7 +618,8 @@ class ETHClient:
         transaction_hash: typing.Union[HexBytes, str],
         account: LocalAccount = None,
         password: str = None,
-        encrypted_key: typing.Dict[str, typing.Any] = None
+        encrypted_key: typing.Dict[str, typing.Any] = None,
+        private_key: str = None
     ) -> TxData:
 
         try:
@@ -599,11 +628,16 @@ class ETHClient:
         except TransactionNotFound:
             pass
     
-        if not (isinstance(account, LocalAccount) or (isinstance(password, str) and isinstance(encrypted_key, dict))):
-            raise TypeError('At least "account" parameter or "password" and "encrypted_key" parameter must be provided')
+        if not (isinstance(account, (LocalAccount, Account)) or \
+            (isinstance(password, str) and isinstance(encrypted_key, dict)) or \
+            isinstance(private_key, str)):
+            raise TypeError('At least "account" parameter or "private_key" or "password" and "encrypted_key" parameter must be provided')
 
         if not isinstance(account,(LocalAccount, Account)):
-            account = self.get_account(password, encrypted_key)
+            if isinstance(password, str) and isinstance(encrypted_key, dict):
+                account = self.get_account(password, encrypted_key)
+            else:
+                account = self.get_account_from_key(private_key)
 
         old_transaction = self.get_transaction(transaction_hash)
 
