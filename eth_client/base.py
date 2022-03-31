@@ -3,9 +3,6 @@ from web3 import Web3
 from .exception import *
 from .utils import *
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(os.path.dirname(CURRENT_DIR))
-
 class ETHClient:
 
     def __init__(
