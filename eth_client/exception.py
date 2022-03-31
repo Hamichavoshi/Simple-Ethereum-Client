@@ -9,5 +9,8 @@ class ContractError(Exception):
 class MethodNotFound(ContractError):
     pass
 
+class EventNotFound(ContractError):
+    pass
+
 class ConnectionError(Exception):
     pass

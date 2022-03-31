@@ -6,11 +6,11 @@ from .utils import *
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(os.path.dirname(CURRENT_DIR))
 
-class ETHBase:
+class ETHClient:
 
     def __init__(
         self,
-        node_host: str = '',
+        node_host: str = 'localhost',
         node_port: typing.Union[str, int] = 8545,
         node_connection_type: str = 'http',
         node_consensus: str = 'PoA'
@@ -41,9 +41,9 @@ class ETHBase:
     ) -> typing.Any:
 
         if isinstance(data, (list, set, tuple)):
-            return [ETHBase.parse_json(i) for i in data]
+            return [ETHClient.parse_json(i) for i in data]
         elif isinstance(data, (dict, AttributeDict)):
-            return {k: ETHBase.parse_json(v) for k,v in data.items()}
+            return {k: ETHClient.parse_json(v) for k,v in data.items()}
         elif isinstance(data,HexBytes):
             return data.hex()
         elif isinstance(data,bytes):
@@ -57,9 +57,9 @@ class ETHBase:
     def parse_param(param: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
 
         if 'tuple' == param['type']:
-            return [ETHBase.parse_param(i) for i in param['components']]
+            return [ETHClient.parse_param(i) for i in param['components']]
         elif 'tuple[' in param['type']:
-            return [[ETHBase.parse_param(i) for i in param['components']]]
+            return [[ETHClient.parse_param(i) for i in param['components']]]
         
         return param['name'] + ':' + param['type']
         
@@ -148,6 +148,16 @@ class ETHBase:
         )
 
         return account
+
+    @check_connection
+    def get_account_from_key(
+        self,
+        private_key: str
+    ) -> LocalAccount:
+
+        account = self.w3.eth.account.from_key(private_key)
+
+        return account
     
     @check_connection
     def get_account_properties(
@@ -166,19 +176,16 @@ class ETHBase:
     @check_connection
     def change_account_password(
         self,
-        password: str,
+        old_password: str,
         new_password: str,
         encrypted_key: typing.Dict[str, typing.Any]
     ) -> typing.Dict[str, typing.Any]:
 
-        account = self.get_account(password, encrypted_key)
+        account = self.get_account(old_password, encrypted_key)
 
         new_encrypted_key = account.encrypt(new_password)
 
-        return {
-            "account": account,
-            "encrypted_key": new_encrypted_key
-        }
+        return new_encrypted_key
 
     @check_connection
     def transfer(
@@ -554,6 +561,31 @@ class ETHBase:
         constructor = method(*contract_args, **contract_kwargs)
 
         return constructor.call()
+
+    @check_connection
+    def parse_contract_event_log(
+        self,
+        event_name: str,
+        transaction_hash: str,
+        *,
+        contract: Contract = None,
+        contract_address: str = None,
+        contract_abi: typing.List[typing.Dict[str, typing.Any]] = None
+    ) -> typing.List[AttributeDict]:
+
+        if not (isinstance(contract, Contract) or (isinstance(contract_address, str) and isinstance(contract_abi, list))):
+            raise TypeError('At least "contract" parameter or "contract_address" and "contract_abi" parameter must be provided')
+
+        if not isinstance(contract, Contract):
+            contract = self.get_contract(contract_address, contract_abi)
+
+        event = getattr(contract.events, event_name, False)
+        if not event:
+            raise EventNotFound(event_name+' event not fount in contract')
+        receipt = self.get_transaction_receipt(transaction_hash)
+        event_log = event().processReceipt(receipt, errors=DISCARD)
+
+        return list(event_log)
 
     @check_connection
     def cancel_transaction(

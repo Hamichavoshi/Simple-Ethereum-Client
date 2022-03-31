@@ -7,6 +7,7 @@ from web3.datastructures import AttributeDict
 from web3.middleware import geth_poa_middleware
 from eth_account.signers.local import LocalAccount
 from web3.types import BlockData, BlockIdentifier, TxData, TxReceipt
+from web3.logs import DISCARD
 
 def check_connection(f):
     @wraps(f)
