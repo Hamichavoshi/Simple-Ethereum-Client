@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
-from eth_client import __version__
+from eth_client.version import __version__
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
