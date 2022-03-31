@@ -1,14 +1,16 @@
 import os
 from setuptools import setup, find_packages
 
-from eth_client.version import __version__
-
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+def get_version(fname):
+
+    return open(os.path.join(os.path.dirname(__file__), fname)).read().split()[-1]
+
 setup(
     name="eth_client",
-    version=__version__,
+    version=get_version(os.path.join('eth_client','version.py')),
     description="simple python client to access ethereum network",
     long_description=read('README.md'),
     author="Ahmad Fahadh Ilyas",
