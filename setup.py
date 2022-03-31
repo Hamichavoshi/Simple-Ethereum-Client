@@ -1,5 +1,5 @@
 import os
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 from eth_client import __version__
 
@@ -14,7 +14,7 @@ setup(
     author="Ahmad Fahadh Ilyas",
     author_email="fahadhilyas4@gmail.com",
     url="https://github.com/fahadh4ilyas/Simple-Ethereum-Client.git",
-    packages=["eth_client"],
+    packages=find_packages(),
     license="MIT",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -23,7 +23,7 @@ setup(
         "Topic :: Utilities"
     ],
     keywords=["ethereum", "web3", "solidity"],
-    install_requires=[
+    requires=[
         "py-solc-x>=1.1.0",
         "web3>=5.20.0"
     ],
