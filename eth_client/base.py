@@ -1,7 +1,11 @@
-import typing, os, solcx
+import typing, os, solcx, logging
 from web3 import Web3
 from .exception import *
 from .utils import *
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s')
 
 class ETHClient:
 
@@ -277,11 +281,17 @@ class ETHClient:
         solc_version: str = None,
     ) -> typing.Dict[str,typing.Dict[str, typing.Any]]:
 
+        installed_version = [str(i) for i in solcx.get_installed_solc_versions()]
+
         if isinstance(solc_version, str):
             if str(solcx.get_solc_version()) != solc_version:
-                if solc_version not in [str(i) for i in solcx.get_installed_solc_versions()]:
+                if solc_version not in installed_version:
                     solcx.install_solc(solc_version)
-                solcx.set_solc_version(solc_version)
+                solcx.set_solc_version(solc_version, silent=True)
+        elif installed_version == []:
+            logging.info('Solc doesn\'t exist. Downloading and installing latest version')
+            current_version = solcx.install_solc()
+            solcx.set_solc_version(current_version, silent=True)
         
         return solcx.compile_files(source_files=source_files, output_values=['bin', 'abi'])
 
