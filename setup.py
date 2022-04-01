@@ -5,8 +5,12 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 def get_version(fname):
-
-    return open(os.path.join(os.path.dirname(__file__), fname)).read().split()[-1]
+    script = open(os.path.join(os.path.dirname(__file__), fname)).read()
+    for line in script.splitlines():
+        if line.startswith('__version__'):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    raise RuntimeError("Unable to find version string.")
 
 setup(
     name="ezeth",
