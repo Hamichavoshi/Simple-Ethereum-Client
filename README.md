@@ -31,7 +31,7 @@ This repository is a python client to access ethereum network.
 Initialize the client
 
 ```python
-from eth_client import ETHClient
+from ezeth import ETHClient
 
 node_host = 'localhost'
 node_port = 8545

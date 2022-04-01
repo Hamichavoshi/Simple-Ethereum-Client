@@ -9,8 +9,8 @@ def get_version(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read().split()[-1]
 
 setup(
-    name="eth_client",
-    version=get_version(os.path.join('eth_client','version.py')),
+    name="ezeth",
+    version=get_version(os.path.join('ezeth','version.py')),
     description="simple python client to access ethereum network",
     long_description=read('README.md'),
     author="Ahmad Fahadh Ilyas",
