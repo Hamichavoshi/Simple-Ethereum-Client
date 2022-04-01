@@ -17,6 +17,7 @@ setup(
     version=get_version(os.path.join('ezeth','version.py')),
     description="simple python client to access ethereum network",
     long_description=read('README.rst'),
+    long_description_content_type="text/x-rst",
     author="Ahmad Fahadh Ilyas",
     author_email="fahadhilyas4@gmail.com",
     url="https://github.com/fahadh4ilyas/Simple-Ethereum-Client.git",
