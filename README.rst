@@ -24,7 +24,7 @@ Usage
 -  `Compile smart contract <#compile-smart-contract>`__
 -  `Deploy smart contract <#deploy-smart-contract>`__
 -  `Get contract <#get-contract>`__
--  `Modify contract’s storage <#modify-contracts-storage>`__
+-  `Modify contract's storage <#modify-contracts-storage>`__
 -  `Parse contract event log <#parse-contract-event-log>`__
 -  `Call contract <#call-contract>`__
 -  `Cancel transaction <#cancel-transaction>`__
@@ -320,7 +320,7 @@ To get the instance of the deployed smart contract, use this
        contract_abi
    )
 
-Modify contract’s storage
+Modify contract's storage
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To modify contract storage by contract method, use this
