@@ -376,27 +376,12 @@ class ETHClient:
         *contract_args,
         value: int = 0,
         gas_price: int = None,
-        address: str = None,
-        account: LocalAccount = None,
-        password: str = None,
-        encrypted_key: typing.Dict[str, typing.Any] = None,
-        private_key: str = None,
+        account_address: str = None,
         **contract_kwargs
     ) -> typing.Dict[str, int]:
 
         if value < 0:
             raise ValueError('Value parameter must be non negative')
-        
-        if not (isinstance(account, (LocalAccount, Account)) or \
-            (isinstance(password, str) and isinstance(encrypted_key, dict)) or \
-            isinstance(private_key, str)):
-            raise TypeError('At least "account" parameter or "private_key" or "password" and "encrypted_key" parameter must be provided')
-
-        if not isinstance(account,(LocalAccount, Account)):
-            if isinstance(password, str) and isinstance(encrypted_key, dict):
-                account = self.get_account(password, encrypted_key)
-            else:
-                account = self.get_account_from_key(private_key)
 
         contract_args, contract_kwargs = self.parse_args(contract_args, contract_kwargs)
         constructor = self.w3.eth.contract(
@@ -411,7 +396,7 @@ class ETHClient:
             gas_price = self.w3.eth.gas_price
 
         transaction = constructor.buildTransaction({
-            "from": account.address,
+            "from": account_address,
             "value": value,
             "gasPrice": gas_price
         })
@@ -523,11 +508,7 @@ class ETHClient:
         contract_abi: typing.List[typing.Dict[str, typing.Any]] = None,
         value: int = 0,
         gas_price: int = None,
-        address: str = None,
-        account: LocalAccount = None,
-        password: str = None,
-        encrypted_key: typing.Dict[str, typing.Any] = None,
-        private_key: str = None,
+        account_address: str = None,
         **contract_kwargs
     ) -> typing.Dict[str, int]:
 
@@ -536,22 +517,6 @@ class ETHClient:
 
         if not (isinstance(contract, Contract) or (isinstance(contract_address, str) and isinstance(contract_abi, list))):
             raise TypeError('At least "contract" parameter or "contract_address" and "contract_abi" parameter must be provided')
-        
-        if not (isinstance(account, (LocalAccount, Account)) or \
-            (isinstance(password, str) and isinstance(encrypted_key, dict)) or \
-            isinstance(private_key, str)):
-            raise TypeError('At least "account" parameter or "private_key" or "password" and "encrypted_key" parameter must be provided')
-
-        if not isinstance(account,(LocalAccount, Account)):
-            if isinstance(password, str) and isinstance(encrypted_key, dict):
-                account = self.get_account(password, encrypted_key)
-            else:
-                account = self.get_account_from_key(private_key)
-
-        if not isinstance(address, str):
-            if not isinstance(account,(LocalAccount, Account)):
-                account = self.get_account(password, encrypted_key)
-            address = account.address
         
         method = getattr(contract.functions, contract_method, False)
         if not method:
@@ -563,7 +528,7 @@ class ETHClient:
             gas_price = self.w3.eth.gas_price
         
         transaction = constructor.buildTransaction({
-            "from": address,
+            "from": account_address,
             "value": value,
             "gasPrice": gas_price
         })
@@ -676,6 +641,26 @@ class ETHClient:
         transaction_hash = self.w3.eth.send_raw_transaction(signed_transaction.rawTransaction)
 
         return self.get_transaction(transaction_hash)
+
+    @check_connection
+    def estimate_cancel_transaction_price(
+        self,
+        transaction_hash: typing.Union[HexBytes, str],
+    ) -> typing.Dict[str, int]:
+
+        try:
+            self.w3.eth.get_transaction_receipt(transaction_hash)
+            raise ValueError('Transaction status is already mined')
+        except TransactionNotFound:
+            pass
+
+        old_transaction = self.get_transaction(transaction_hash)
+
+        total_gas = 21000
+
+        gas_price = old_transaction['gasPrice'] + 1
+
+        return {'cost': total_gas*gas_price, 'value': 0, 'total': total_gas*gas_price}
     
     @check_connection
     def get_transaction(

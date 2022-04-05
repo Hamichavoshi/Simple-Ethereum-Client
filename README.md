@@ -265,7 +265,7 @@ To estimate the cost to deploy smart contract, use this
 cost = client.estimate_deploy_contract_price(
     contract_bytecode,
     contract_abi,
-    account=account,
+    account_address=account.address,
     initValue=init_value
 )
 
@@ -319,7 +319,7 @@ To estimate the cost, use this
 cost = client.estimate_contract_method_price(
     contract_method,
     contract=contract,
-    account=account,
+    account_address=account.address,
     newValue=new_value
 )
 
@@ -371,6 +371,17 @@ new_transaction = client.cancel_transaction(
     transaction_hash,
     account=account
 )
+```
+
+To estimate the cost, use this
+
+```python
+cost = client.estimate_cancel_transaction_price(
+    transaction_hash
+)
+
+print(cost)
+# {'cost': 811590000000000, 'value': 0, 'total': 811590000000000}
 ```
 
 > Transaction that already verified or mined can't be canceled. The way the transaction canceled is by sending new empty transaction with the same nonce but higher gas price so the empty transaction will be mined and the old one will be discarded.
