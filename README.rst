@@ -353,7 +353,7 @@ To estimate the cost, use this
 
 ..
 
-   The account which modify the smart contract’s storage must have a
+   The account which modify the smart contract's storage must have a
    sufficient balance to estimate the cost if the method is payable
    method.
 
@@ -377,7 +377,7 @@ this
 Call contract
 ~~~~~~~~~~~~~
 
-To call contract’s ``pure`` and ``view`` methods, use this
+To call contract's ``pure`` and ``view`` methods, use this
 
 .. code:: python
 
@@ -407,7 +407,7 @@ To cancel any transaction from account, use this
 
 ..
 
-   Transaction that already verified or mined can’t be canceled. The way
+   Transaction that already verified or mined can't be canceled. The way
    the transaction canceled is by sending new empty transaction with the
    same nonce but higher gas price so the empty transaction will be
    mined and the old one will be discarded.
