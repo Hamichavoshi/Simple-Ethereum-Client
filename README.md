@@ -73,7 +73,7 @@ client.connect(
 
 The returned object is dictionary with 2 keys,
 
-* `"account"`, contains the instance of `"LocalAccount"`
+* `"account"`, contains the instance of `LocalAccount`
 * `"encrypted_key"`, contains the dictionary that contains address and private key of the account encrypted with password input from the parameter
 
 ```python
