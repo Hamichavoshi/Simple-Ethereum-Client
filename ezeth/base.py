@@ -499,6 +499,50 @@ class ETHClient:
         return self.get_transaction(transaction_hash)
 
     @check_connection
+    def contract_method_test(
+        self,
+        contract_method: str,
+        *contract_args,
+        contract: Contract = None,
+        contract_address: str = None,
+        contract_abi: typing.List[typing.Dict[str, typing.Any]] = None,
+        value: int = 0,
+        gas_price: int = None,
+        account_address: str = None,
+        **contract_kwargs
+    ) -> typing.Literal[True]:
+
+        if value < 0:
+            raise ValueError('Value parameter must be non negative')
+
+        if not (isinstance(contract, Contract) or (isinstance(contract_address, str) and isinstance(contract_abi, list))):
+            raise TypeError('At least "contract" parameter or "contract_address" and "contract_abi" parameter must be provided')
+        
+        method = getattr(contract.functions, contract_method, False)
+        if not method:
+            raise MethodNotFound(contract_method+' method not found in contract')
+        contract_args, contract_kwargs = self.parse_args(contract_args, contract_kwargs)
+        constructor = method(*contract_args, **contract_kwargs)
+
+        if not isinstance(gas_price, int):
+            gas_price = self.w3.eth.gas_price
+        
+        gas = constructor.estimateGas({
+            "from": account_address,
+            "value": value,
+            "gasPrice": gas_price
+        })
+
+        constructor.call({
+            "from": account_address,
+            "value": value,
+            "gas": gas,
+            "gasPrice": gas_price
+        })
+
+        return True
+
+    @check_connection
     def estimate_contract_method_price(
         self,
         contract_method: str,

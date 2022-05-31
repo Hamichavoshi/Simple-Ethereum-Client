@@ -337,6 +337,18 @@ To modify contract storage by contract method, use this
        newValue=new_value
    )
 
+To test contract method locally without sending transaction to network, use this
+
+.. code:: python
+
+   # will raise exception if something wrong, else return True
+   client.contract_method_test(
+      contract_method,
+      contract=contract,
+      account_address=account.address,
+      newValue=new_value
+   )
+
 To estimate the cost, use this
 
 .. code:: python
