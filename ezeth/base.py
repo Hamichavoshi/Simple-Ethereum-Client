@@ -1,4 +1,4 @@
-import typing, os, solcx, logging
+import typing, os, solcx, logging, web3
 from web3 import Web3
 from .exception import *
 from .utils import *
@@ -6,6 +6,11 @@ from .utils import *
 logging.basicConfig(
     level=logging.INFO,
     format='%(levelname)s: %(message)s')
+
+if int(web3.__version__.partition('.')[0]) < 6:
+    build_transaction = 'buildTransaction'
+else:
+    build_transaction = 'build_transaction'
 
 class ETHClient:
 
@@ -310,6 +315,7 @@ class ETHClient:
         private_key: str = None,
         **contract_kwargs
     ) -> typing.Dict[str, typing.Any]:
+        global build_transaction
 
         if value < 0:
             raise ValueError('Value parameter must be non negative')
@@ -339,7 +345,7 @@ class ETHClient:
         if not isinstance(gas_price, int):
             gas_price = self.w3.eth.gas_price
 
-        transaction = constructor.buildTransaction({
+        transaction = getattr(constructor, build_transaction)({
             "from": account.address,
             "nonce": current_nonce,
             "value": value,
@@ -379,6 +385,7 @@ class ETHClient:
         account_address: str = None,
         **contract_kwargs
     ) -> typing.Dict[str, int]:
+        global build_transaction
 
         if value < 0:
             raise ValueError('Value parameter must be non negative')
@@ -395,7 +402,7 @@ class ETHClient:
         if not isinstance(gas_price, int):
             gas_price = self.w3.eth.gas_price
 
-        transaction = constructor.buildTransaction({
+        transaction = getattr(constructor, build_transaction)({
             "from": account_address,
             "value": value,
             "gasPrice": gas_price
@@ -444,6 +451,7 @@ class ETHClient:
         private_key: str = None,
         **contract_kwargs
     ) -> TxData:
+        global build_transaction
 
         if value < 0:
             raise ValueError('Value parameter must be non negative')
@@ -476,7 +484,7 @@ class ETHClient:
         if not isinstance(gas_price, int):
             gas_price = self.w3.eth.gas_price
 
-        transaction = constructor.buildTransaction({
+        transaction = getattr(constructor, build_transaction)({
             "from": account.address,
             "nonce": current_nonce,
             "value": value,
@@ -555,6 +563,7 @@ class ETHClient:
         account_address: str = None,
         **contract_kwargs
     ) -> typing.Dict[str, int]:
+        global build_transaction
 
         if value < 0:
             raise ValueError('Value parameter must be non negative')
@@ -571,7 +580,7 @@ class ETHClient:
         if not isinstance(gas_price, int):
             gas_price = self.w3.eth.gas_price
         
-        transaction = constructor.buildTransaction({
+        transaction = getattr(constructor, build_transaction)({
             "from": account_address,
             "value": value,
             "gasPrice": gas_price
