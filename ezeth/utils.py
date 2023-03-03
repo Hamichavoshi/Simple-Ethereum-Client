@@ -1,6 +1,7 @@
 from functools import wraps
 from pathlib import Path
 from eth_account.account import Account
+from eth_account.messages import encode_structured_data
 from hexbytes.main import HexBytes
 from web3.contract import Contract
 from web3.datastructures import AttributeDict

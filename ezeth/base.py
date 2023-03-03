@@ -232,8 +232,21 @@ class ETHClient:
             message = self.w3.toHex(text=message)
             message_gas = (len(message)//2 - 1) * 68
         total_gas = 21000 + message_gas
+
+        transaction = {
+            "from": account.address,
+            "to": to,
+            "value": value,
+            "data": message,
+            "gas": total_gas,
+            "nonce": current_nonce,
+            "chainId": self.w3.eth.chain_id
+        }
+
         if not isinstance(gas_price, int):
             gas_price = self.w3.eth.gas_price
+        
+        transaction['gasPrice'] = gas_price
 
         account_balance = self.w3.eth.get_balance(account.address)
 
@@ -244,17 +257,6 @@ class ETHClient:
 
         if account_balance < total_cost:
             raise ValueError(str(total_cost - account_balance)+' minimum needed to be added to do transaction. Ask admin to send it to you.')
-
-        transaction = {
-            "from": account.address,
-            "to": to,
-            "value": value,
-            "data": message,
-            "gas": total_gas,
-            "gasPrice": gas_price,
-            "nonce": current_nonce,
-            "chainId": self.w3.eth.chain_id
-        }
 
         signed_transaction = account.sign_transaction(transaction)
 
@@ -345,12 +347,20 @@ class ETHClient:
         if not isinstance(gas_price, int):
             gas_price = self.w3.eth.gas_price
 
-        transaction = getattr(constructor, build_transaction)({
-            "from": account.address,
-            "nonce": current_nonce,
-            "value": value,
-            "gasPrice": gas_price
-        })
+        try:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account.address,
+                "nonce": current_nonce,
+                "value": value
+            })
+            gas_price = transaction['maxFeePerGas']
+        except:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account.address,
+                "nonce": current_nonce,
+                "value": value,
+                "gasPrice": gas_price
+            })
 
         total_gas = transaction['gas']
 
@@ -375,6 +385,66 @@ class ETHClient:
         return payload
 
     @check_connection
+    def generate_deploy_contract_transaction(
+        self,
+        contract_bytecode: str,
+        contract_abi: typing.List[typing.Dict[str, typing.Any]],
+        *contract_args,
+        value: int = 0,
+        nonce: int = None,
+        gas_price: int = None,
+        account_address: str = None,
+        **contract_kwargs
+    ) -> typing.Dict[str, typing.Any]:
+        global build_transaction
+
+        if value < 0:
+            raise ValueError('Value parameter must be non negative')
+
+        if not isinstance(account_address, str):
+            raise TypeError('"account_address" parameter must be provided')
+
+        current_nonce = nonce or self.w3.eth.get_transaction_count(account_address)
+
+        contract_args, contract_kwargs = self.parse_args(contract_args, contract_kwargs)
+        constructor = self.w3.eth.contract(
+            bytecode=contract_bytecode,
+            abi=contract_abi
+        ).constructor(
+            *contract_args,
+            **contract_kwargs
+        )
+
+        if not isinstance(gas_price, int):
+            gas_price = self.w3.eth.gas_price
+
+        try:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account_address,
+                "nonce": current_nonce,
+                "value": value
+            })
+            gas_price = transaction['maxFeePerGas']
+        except:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account_address,
+                "nonce": current_nonce,
+                "value": value,
+                "gasPrice": gas_price
+            })
+
+        total_gas = transaction['gas']
+
+        account_balance = self.w3.eth.get_balance(account_address)
+
+        total_cost = value + total_gas * gas_price
+
+        if account_balance < total_cost:
+            raise ValueError(str(total_cost - account_balance)+' minimum needed to be added to do transaction. Ask admin to send it to you.')
+
+        return transaction
+
+    @check_connection
     def estimate_deploy_contract_price(
         self,
         contract_bytecode: str,
@@ -389,6 +459,9 @@ class ETHClient:
 
         if value < 0:
             raise ValueError('Value parameter must be non negative')
+        
+        if not isinstance(account_address, str):
+            raise TypeError('"account_address" parameter must be provided')
 
         contract_args, contract_kwargs = self.parse_args(contract_args, contract_kwargs)
         constructor = self.w3.eth.contract(
@@ -402,11 +475,18 @@ class ETHClient:
         if not isinstance(gas_price, int):
             gas_price = self.w3.eth.gas_price
 
-        transaction = getattr(constructor, build_transaction)({
-            "from": account_address,
-            "value": value,
-            "gasPrice": gas_price
-        })
+        try:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account_address,
+                "value": value
+            })
+            gas_price = transaction['maxFeePerGas']
+        except:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account_address,
+                "value": value,
+                "gasPrice": gas_price
+            })
 
         total_gas = transaction['gas']
 
@@ -484,12 +564,20 @@ class ETHClient:
         if not isinstance(gas_price, int):
             gas_price = self.w3.eth.gas_price
 
-        transaction = getattr(constructor, build_transaction)({
-            "from": account.address,
-            "nonce": current_nonce,
-            "value": value,
-            "gasPrice": gas_price
-        })
+        try:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account.address,
+                "nonce": current_nonce,
+                "value": value
+            })
+            gas_price = transaction['maxFeePerGas']
+        except:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account.address,
+                "nonce": current_nonce,
+                "value": value,
+                "gasPrice": gas_price
+            })
 
         total_gas = transaction['gas']
 
@@ -505,6 +593,71 @@ class ETHClient:
         transaction_hash = self.w3.eth.send_raw_transaction(signed_transaction.rawTransaction)
 
         return self.get_transaction(transaction_hash)
+    
+    @check_connection
+    def generate_contract_method_transaction(
+        self,
+        contract_method: str,
+        *contract_args,
+        contract: Contract = None,
+        contract_address: str = None,
+        contract_abi: typing.List[typing.Dict[str, typing.Any]] = None,
+        value: int = 0,
+        nonce: int = None,
+        gas_price: int = None,
+        account_address: str = None,
+        **contract_kwargs
+    ) -> typing.Dict[str, typing.Any]:
+        global build_transaction
+
+        if value < 0:
+            raise ValueError('Value parameter must be non negative')
+        
+        if not (isinstance(contract, Contract) or (isinstance(contract_address, str) and isinstance(contract_abi, list))):
+            raise TypeError('At least "contract" parameter or "contract_address" and "contract_abi" parameter must be provided')
+
+        if not isinstance(account_address, str):
+            raise TypeError('"account_address" parameter must be provided')
+
+        current_nonce = nonce or self.w3.eth.get_transaction_count(account_address)
+
+        if not isinstance(contract, Contract):
+            contract = self.get_contract(contract_address, contract_abi)
+
+        method = getattr(contract.functions, contract_method, False)
+        if not method:
+            raise MethodNotFound(contract_method+' method not found in contract')
+        contract_args, contract_kwargs = self.parse_args(contract_args, contract_kwargs)
+        constructor = method(*contract_args, **contract_kwargs)
+
+        if not isinstance(gas_price, int):
+            gas_price = self.w3.eth.gas_price
+
+        try:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account_address,
+                "nonce": current_nonce,
+                "value": value
+            })
+            gas_price = transaction['maxFeePerGas']
+        except:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account_address,
+                "nonce": current_nonce,
+                "value": value,
+                "gasPrice": gas_price
+            })
+
+        total_gas = transaction['gas']
+
+        account_balance = self.w3.eth.get_balance(account_address)
+
+        total_cost = value + total_gas * gas_price
+
+        if account_balance < total_cost:
+            raise ValueError(str(total_cost - account_balance)+' minimum needed to be added to do transaction. Ask admin to send it to you.')
+
+        return transaction
 
     @check_connection
     def contract_method_test(
@@ -526,6 +679,12 @@ class ETHClient:
         if not (isinstance(contract, Contract) or (isinstance(contract_address, str) and isinstance(contract_abi, list))):
             raise TypeError('At least "contract" parameter or "contract_address" and "contract_abi" parameter must be provided')
         
+        if not isinstance(account_address, str):
+            raise TypeError('"account_address" parameter must be provided')
+
+        if not isinstance(contract, Contract):
+            contract = self.get_contract(contract_address, contract_abi)
+        
         method = getattr(contract.functions, contract_method, False)
         if not method:
             raise MethodNotFound(contract_method+' method not found in contract')
@@ -535,18 +694,30 @@ class ETHClient:
         if not isinstance(gas_price, int):
             gas_price = self.w3.eth.gas_price
         
-        gas = constructor.estimateGas({
-            "from": account_address,
-            "value": value,
-            "gasPrice": gas_price
-        })
+        try:
+            gas = constructor.estimateGas({
+                "from": account_address,
+                "value": value
+            })
 
-        constructor.call({
-            "from": account_address,
-            "value": value,
-            "gas": gas,
-            "gasPrice": gas_price
-        })
+            constructor.call({
+                "from": account_address,
+                "value": value,
+                "gas": gas
+            })
+        except:
+            gas = constructor.estimateGas({
+                "from": account_address,
+                "value": value,
+                "gasPrice": gas_price
+            })
+
+            constructor.call({
+                "from": account_address,
+                "value": value,
+                "gas": gas,
+                "gasPrice": gas_price
+            })
 
         return True
 
@@ -571,6 +742,12 @@ class ETHClient:
         if not (isinstance(contract, Contract) or (isinstance(contract_address, str) and isinstance(contract_abi, list))):
             raise TypeError('At least "contract" parameter or "contract_address" and "contract_abi" parameter must be provided')
         
+        if not isinstance(account_address, str):
+            raise TypeError('"account_address" parameter must be provided')
+
+        if not isinstance(contract, Contract):
+            contract = self.get_contract(contract_address, contract_abi)
+        
         method = getattr(contract.functions, contract_method, False)
         if not method:
             raise MethodNotFound(contract_method+' method not found in contract')
@@ -580,11 +757,18 @@ class ETHClient:
         if not isinstance(gas_price, int):
             gas_price = self.w3.eth.gas_price
         
-        transaction = getattr(constructor, build_transaction)({
-            "from": account_address,
-            "value": value,
-            "gasPrice": gas_price
-        })
+        try:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account_address,
+                "value": value
+            })
+            gas_price = transaction['maxFeePerGas']
+        except:
+            transaction = getattr(constructor, build_transaction)({
+                "from": account_address,
+                "value": value,
+                "gasPrice": gas_price
+            })
 
         total_gas = transaction['gas']
 
@@ -714,6 +898,161 @@ class ETHClient:
         gas_price = old_transaction['gasPrice'] + 1
 
         return {'cost': total_gas*gas_price, 'value': 0, 'total': total_gas*gas_price}
+
+    @check_connection
+    def sign_transaction_as_typed_data(
+        self,
+        domain_name: str,
+        domain_version: str,
+        verifying_contract: str,
+        transaction: typing.Dict[str, typing.Any],
+        domain_chain_id: int = None,
+        account: LocalAccount = None,
+        password: str = None,
+        encrypted_key: typing.Dict[str, typing.Any] = None,
+        private_key: str = None,
+    ) -> HexBytes:
+        
+        if any([i not in transaction for i in ['from', 'to', 'nonce', 'gas']]):
+            raise TypeError('At least transaction must contains "from", "to", "nonce", and "gas" field')
+
+        if not (isinstance(account, (LocalAccount, Account)) or \
+            (isinstance(password, str) and isinstance(encrypted_key, dict)) or \
+            isinstance(private_key, str)):
+            raise TypeError('At least "account" parameter or "private_key" or "password" and "encrypted_key" parameter must be provided')
+
+        if not isinstance(domain_chain_id, int):
+            domain_chain_id = transaction.get('chainId', self.w3.eth.chain_id)
+
+        if not isinstance(account,(LocalAccount, Account)):
+            if isinstance(password, str) and isinstance(encrypted_key, dict):
+                account = self.get_account(password, encrypted_key)
+            else:
+                account = self.get_account_from_key(private_key)
+
+        data = {
+            'types': {
+                'EIP712Domain': [
+                    { 'name': 'name', 'type': 'string' },
+                    { 'name': 'version', 'type': 'string' },
+                    { 'name': 'chainId', 'type': 'uint256' },
+                    { 'name': 'verifyingContract', 'type': 'address' },
+                ],
+                'ForwardRequest': [
+                    { 'name': 'from', 'type': 'address' },
+                    { 'name': 'to', 'type': 'address' },
+                    { 'name': 'value', 'type': 'uint256' },
+                    { 'name': 'gas', 'type': 'uint256' },
+                    { 'name': 'nonce', 'type': 'uint256' },
+                    { 'name': 'data', 'type': 'bytes' }
+                ]
+            },
+            'primaryType': 'ForwardRequest',
+            'domain': {
+                'name': domain_name,
+                'version': domain_version,
+                'chainId': domain_chain_id,
+                'verifyingContract': verifying_contract,
+            },
+            'message': {
+                'from': transaction['from'],
+                'to': transaction['to'],
+                'value': transaction.get('value', 0),
+                'gas': transaction['gas'],
+                'nonce': transaction['nonce'],
+                'data': bytes.fromhex(transaction.get('data', '0x')[2:])
+            }
+        }
+
+        signable_data = encode_structured_data(data)
+
+        signed_data = account.sign_message(signable_data)
+
+        return signed_data.signature
+    
+    @check_connection
+    def forward_signed_transaction(
+        self,
+        transaction: typing.Dict[str, typing.Any],
+        signature: typing.Union[str, HexBytes],
+        contract: Contract = None,
+        contract_address: str = None,
+        contract_abi: typing.List[typing.Dict[str, typing.Any]] = None,
+        forwarder_method: str = 'execute',
+        nonce: int = None,
+        gas_price: int = None,
+        account: LocalAccount = None,
+        password: str = None,
+        encrypted_key: typing.Dict[str, typing.Any] = None,
+        private_key: str = None,
+    ) -> TxData:
+        
+        if any([i not in transaction for i in ['from', 'to', 'nonce', 'gas']]):
+            raise TypeError('At least transaction must contains "from", "to", "nonce", and "gas" field')
+
+        transaction['value'] = transaction.get('value', 0)
+        transaction['data'] = transaction.get('data', '0x')
+        
+        if not (isinstance(contract, Contract) or (isinstance(contract_address, str) and isinstance(contract_abi, list))):
+            raise TypeError('At least "contract" parameter or "contract_address" and "contract_abi" parameter must be provided')
+
+        if not (isinstance(account, (LocalAccount, Account)) or \
+            (isinstance(password, str) and isinstance(encrypted_key, dict)) or \
+            isinstance(private_key, str)):
+            raise TypeError('At least "account" parameter or "private_key" or "password" and "encrypted_key" parameter must be provided')
+
+        if not isinstance(account,(LocalAccount, Account)):
+            if isinstance(password, str) and isinstance(encrypted_key, dict):
+                account = self.get_account(password, encrypted_key)
+            else:
+                account = self.get_account_from_key(private_key)
+        
+        current_nonce = nonce or self.w3.eth.get_transaction_count(account.address)
+
+        if not isinstance(contract, Contract):
+            contract = self.get_contract(contract_address, contract_abi)
+        
+        method = getattr(contract.functions, forwarder_method, False)
+        if not method:
+            raise MethodNotFound(forwarder_method+' method not found in forwarder contract')
+        contract_args, contract_kwargs = self.parse_args(contract_args, contract_kwargs)
+        constructor = method(
+            req={k:transaction[k] for k in ['from', 'to', 'value', 'gas', 'nonce', 'data']},
+            signature=signature
+        )
+
+        if not isinstance(gas_price, int):
+            gas_price = self.w3.eth.gas_price
+
+        try:
+            forward_transaction = getattr(constructor, build_transaction)({
+                "from": account.address,
+                "nonce": current_nonce
+            })
+            gas_price = transaction['maxFeePerGas']
+        except:
+            forward_transaction = getattr(constructor, build_transaction)({
+                "from": account.address,
+                "nonce": current_nonce,
+                "gasPrice": gas_price
+            })
+        
+        forward_transaction['gas'] = forward_transaction['gas'] + transaction['gas']
+
+        total_gas = forward_transaction['gas']
+
+        account_balance = self.w3.eth.get_balance(account.address)
+
+        total_cost = total_gas * gas_price
+
+        if account_balance < total_cost:
+            raise ValueError(str(total_cost - account_balance)+' minimum needed to be added to do transaction.')
+
+        signed_transaction = account.sign_transaction(forward_transaction)
+
+        transaction_hash = self.w3.eth.send_raw_transaction(signed_transaction.rawTransaction)
+
+        return self.get_transaction(transaction_hash)
     
     @check_connection
     def get_transaction(
