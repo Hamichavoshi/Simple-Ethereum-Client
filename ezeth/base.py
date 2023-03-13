@@ -975,9 +975,9 @@ class ETHClient:
         self,
         transaction: typing.Dict[str, typing.Any],
         signature: typing.Union[str, HexBytes],
-        contract: Contract = None,
-        contract_address: str = None,
-        contract_abi: typing.List[typing.Dict[str, typing.Any]] = None,
+        forwarder_contract: Contract = None,
+        forwarder_contract_address: str = None,
+        forwarder_contract_abi: typing.List[typing.Dict[str, typing.Any]] = None,
         forwarder_method: str = 'execute',
         nonce: int = None,
         gas_price: int = None,
@@ -993,8 +993,8 @@ class ETHClient:
         transaction['value'] = transaction.get('value', 0)
         transaction['data'] = transaction.get('data', '0x')
         
-        if not (isinstance(contract, Contract) or (isinstance(contract_address, str) and isinstance(contract_abi, list))):
-            raise TypeError('At least "contract" parameter or "contract_address" and "contract_abi" parameter must be provided')
+        if not (isinstance(forwarder_contract, Contract) or (isinstance(forwarder_contract_address, str) and isinstance(forwarder_contract_abi, list))):
+            raise TypeError('At least "forwarder_contract" parameter or "forwarder_contract_address" and "forwarder_contract_abi" parameter must be provided')
 
         if not (isinstance(account, (LocalAccount, Account)) or \
             (isinstance(password, str) and isinstance(encrypted_key, dict)) or \
@@ -1009,10 +1009,10 @@ class ETHClient:
         
         current_nonce = nonce or self.w3.eth.get_transaction_count(account.address)
 
-        if not isinstance(contract, Contract):
-            contract = self.get_contract(contract_address, contract_abi)
+        if not isinstance(forwarder_contract, Contract):
+            forwarder_contract = self.get_contract(forwarder_contract_address, forwarder_contract_abi)
         
-        method = getattr(contract.functions, forwarder_method, False)
+        method = getattr(forwarder_contract.functions, forwarder_method, False)
         if not method:
             raise MethodNotFound(forwarder_method+' method not found in forwarder contract')
         contract_args, contract_kwargs = self.parse_args(contract_args, contract_kwargs)
